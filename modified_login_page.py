@@ -61,33 +61,37 @@ class Login:
                     return account_number
         
         def create_handler(balance, account_number, customer_id):
-
-            # Retrieve a random branch ID from the 'branch' table
-            self.mycursor.execute("SELECT branchid FROM branch ORDER BY RAND() LIMIT 1")
-            branch_id = self.mycursor.fetchone()[0]
-
-            # List of account types
-            account_types = ['savings', 'current', 'fixed deposit', 'recurring deposit']
-
-            # Randomly select an account type
-            account_type = random.choice(account_types)
-            status = "active"
-
+            
             try:
-                balance = float(balance)
-            except ValueError:
-                messagebox.showerror("Error", "Invalid input. Please enter a valid decimal number.")
-            # Insert the new account information into the 'account' table
-            sql = "INSERT INTO account (accountid, customerid, branchid, balance, accounttype, status) VALUES (%s, %s, %s, %s, %s, %s)"
-            values = (account_number, customer_id, branch_id, float(balance), account_type, status)
+                # Retrieve a random branch ID from the 'branch' table
+                self.mycursor.execute("SELECT branchid FROM branch ORDER BY RAND() LIMIT 1")
+                branch_id = self.mycursor.fetchone()[0]
 
-            self.mycursor.execute(sql, values)
-            self.mydb.commit()
-            messagebox.showinfo("Success", "Account created successfully!!")
-            enterbalance.destroy()
-            print("Account created successfully!")
+                # List of account types
+                account_types = ['savings', 'current', 'fixed deposit', 'recurring deposit']
 
-            self.update_account_combobox(account_combobox, customer_id)
+                # Randomly select an account type
+                account_type = random.choice(account_types)
+                status = "active"
+
+                try:
+                    balance = float(balance)
+                except ValueError:
+                    messagebox.showerror("Error", "Invalid input. Please enter a valid decimal number.")
+                # Insert the new account information into the 'account' table
+                sql = "INSERT INTO account (accountid, customerid, branchid, balance, accounttype, status) VALUES (%s, %s, %s, %s, %s, %s)"
+                values = (account_number, customer_id, branch_id, float(balance), account_type, status)
+
+                self.mycursor.execute(sql, values)
+                self.mydb.commit()
+                messagebox.showinfo("Success", "Account created successfully!!")
+                enterbalance.destroy()
+                print("Account created successfully!")
+
+                self.update_account_combobox(account_combobox, customer_id)
+            
+            except MySQLdb.Error as e:
+                messagebox.showinfo(f"Error: {e}")
 
         account_number = str(generate_unique_account_number())
         ttk.Label(enterbalance, text="Your assigned account number is " +account_number).pack(pady=10)
@@ -236,45 +240,49 @@ class Login:
 
         # Function to validate and register the customer
         def register_customer():
-            # Get values from the Entry widgets
-            first_name = first_name_entry.get()
-            last_name = last_name_entry.get()
-            address = address_entry.get()
-            phone_number = phone_entry.get()
-            username = username_entry.get()
-            password = password_entry.get()
-            password_again = password_again_entry.get()
+            try:
+                # Get values from the Entry widgets
+                first_name = first_name_entry.get()
+                last_name = last_name_entry.get()
+                address = address_entry.get()
+                phone_number = phone_entry.get()
+                username = username_entry.get()
+                password = password_entry.get()
+                password_again = password_again_entry.get()
 
-            # Validate if all fields are filled
-            if not all([first_name, last_name, address, phone_number]):
-                messagebox.showerror("Error", "Please fill in all fields.")
-                return
-            
-            if password != password_again:
-                messagebox.showerror("Error", "Passwords do not match.")
-                return
+                # Validate if all fields are filled
+                if not all([first_name, last_name, address, phone_number]):
+                    messagebox.showerror("Error", "Please fill in all fields.")
+                    return
+                
+                if password != password_again:
+                    messagebox.showerror("Error", "Passwords do not match.")
+                    return
 
-            # Generate a unique CustomerID
-            customer_id = generate_unique_customer_id()
+                # Generate a unique CustomerID
+                customer_id = generate_unique_customer_id()
 
-            # Hash the password
-            hashed_password = hash_password(password)
+                # Hash the password
+                hashed_password = hash_password(password)
 
-            # Insert data into the customer table
-            self.mycursor.execute("INSERT INTO customer (customerid, Fname, Lname, address, phoneno) VALUES (%s, %s, %s, %s, %s)",
-                            (customer_id, first_name, last_name, address, phone_number))
+                # Insert data into the customer table
+                self.mycursor.execute("INSERT INTO customer (customerid, Fname, Lname, address, phoneno) VALUES (%s, %s, %s, %s, %s)",
+                                (customer_id, first_name, last_name, address, phone_number))
 
-            # Insert data into the customerlogin table
-            self.mycursor.execute("INSERT INTO customerlogin (customerid, username, passwordhash) VALUES (%s, %s, %s)",
-                            (customer_id, username, hashed_password))
+                # Insert data into the customerlogin table
+                self.mycursor.execute("INSERT INTO customerlogin (customerid, username, passwordhash) VALUES (%s, %s, %s)",
+                                (customer_id, username, hashed_password))
 
-            # Commit the changes
-            self.mydb.commit()
-            messagebox.showinfo("Success", f"Customer registered!!, Customer ID: {customer_id}")
+                # Commit the changes
+                self.mydb.commit()
+                messagebox.showinfo("Success", f"Customer registered!!, Customer ID: {customer_id}")
 
-            # Close the registration window after successful registration
-            customer_reg.destroy()
-            # Widgets for customer registration
+                # Close the registration window after successful registration
+                customer_reg.destroy()
+                # Widgets for customer registration
+            except MySQLdb.Error as e:
+                messagebox.showinfo(f"Error: {e}, enter valid phonenumber")
+
         ttk.Label(customer_reg, text="First Name:").pack(pady=(5, 10))
         first_name_entry = ttk.Entry(customer_reg)
         first_name_entry.pack(pady=(0, 10))
